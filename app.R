@@ -8,6 +8,7 @@ library(tidyr)
 library(showtext)
 library(plotly)
 library(ggthemes)
+library(maps)
 
 countries <- c('tw','gb','us')
 img_urls <- paste0(
