@@ -354,10 +354,10 @@ server <- shinyServer(function(input, output, session){
   # Confirmed
   #------------------------------
   
-  df_confirmed <- read.csv(file = "C:/Users/FX505/Downloads/time_series_covid_19_confirmed.csv",sep =",")
+  df_confirmed <- read.csv(file = "data/worldMap/time_series_covid_19_confirmed.csv",sep =",")
   df_confirmed <- df_confirmed %>% rename(Country = "Country.Region") 
   
-  Conf_wide_1 <- read.csv(file = "C:/Users/FX505/Downloads/Conf_wide1.csv",sep = ",")
+  Conf_wide_1 <- read.csv(file = "data/worldMap/Conf_wide1.csv",sep = ",")
   
   df_confirmed <- merge(df_confirmed,Conf_wide_1,by ="Country",all=T )
   df_confirmed <- df_confirmed %>% filter(Lat != "NA")
@@ -383,7 +383,7 @@ server <- shinyServer(function(input, output, session){
   #------------------------------
   # deaths
   #------------------------------
-  df_deaths <- read.csv(file = "C:/Users/FX505/Downloads/time_series_covid_19_deaths.csv",sep =",")
+  df_deaths <- read.csv(file = "data/worldMap/time_series_covid_19_deaths.csv",sep =",")
   df_deaths <- df_deaths %>% 
     rename(country = "Country.Region") 
   
