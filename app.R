@@ -74,27 +74,7 @@ ui <- dashboardPage(
     tabItems(
       tabItem(
         tabName = "Firstpage",
-        tags$div(" ", style = "padding-top:35px"),
-        tags$style(HTML("
-                   .nav-tabs-custom a{font-size:25px}
-                    ")),
-        fluidRow(
-          #valueBox(15*200,"全球確診人數",icon = icon("hourglass-3")),
-        ),
-        fluidRow(
-          tabBox(
-            title = " ",width = 100,
-            # The id lets us use input$tabset1 on the server to find the current tab
-            id = "tabset1", height = "300px",
-            tabPanel("確診人數",
-                     plotlyOutput(outputId = "covidConfirmed", height = "750px")
-            ),
-            tabPanel("死亡人數", 
-                     plotlyOutput(outputId = "covidDeaths", height = "750px")
-            )
-          )
-          
-        )
+
       ),
       tabItem(
         tabName = "TAIWAN",
@@ -147,7 +127,7 @@ ui <- dashboardPage(
                   ),
                   awesomeCheckboxGroup(
                     inputId = "Group_taiwanall", label = "123", choices = c("銷售額" = "total", "銷售額年增率" = "growth", "失業率" = "n_unem", "油價" = "n_oil"),
-                    selected = "銷售額", status = "danger"
+                    selected = "total", status = "danger"
                   ),
                 ),
                 mainPanel(
@@ -229,7 +209,7 @@ server <- shinyServer(function(input, output, session){
   })
   
   output$TaiwanSaleplot = renderPlotly({
-    plot_ly(TaiwanSaleArea(),x=~time,y=~total, color = ~industry) %>% add_lines()
+    plot_ly(TaiwanSaleArea(),x=~time,y=~total, color = ~industry ,colors = "Set2") %>% add_lines()
     #ggplot(TaiwanSaleArea(), aes(x=time, y = total, colour =industry ,group = industry,shape=industry)) + 
     #  geom_line(size = 2)
   })
@@ -324,17 +304,17 @@ server <- shinyServer(function(input, output, session){
   })
   
   output$WorldAllplot = renderPlotly({
-    if (input$Group_worldall == c("n_oil","n_unem"))  {
+    if (all(input$Group_worldall == c("n_unem","n_oil")))  {
       subplot(
-        plot_ly(sub_world_data(),x=~time,y=~data, color = ~country) %>% add_lines(),
-        plot_ly(sub_world_data2(),x=~time,y=~data, color = ~country) %>% add_lines(), nrows = 2
+        plot_ly(sub_world_data(),x=~time,y=~data, color = ~country, colors = "Set2") %>% add_lines(),
+        plot_ly(sub_world_data2(),x=~time,y=~data, color = ~country, colors = "Set2") %>% add_lines(), nrows = 2
       )
     }  
-    else if (input$Group_worldall == "n_unem")  {
-      plot_ly(sub_world_data(),x=~time,y=~data, color = ~country) %>% add_lines()
+    else if (all(input$Group_worldall == "n_unem"))  {
+      plot_ly(sub_world_data(),x=~time,y=~data, color = ~country, colors = "Set2") %>% add_lines()
     }
-    else if (input$Group_worldall == "n_oil")  {
-      plot_ly(sub_world_data2(),x=~time,y=~data, color = ~country) %>% add_lines()
+    else if (all(input$Group_worldall == "n_oil"))  {
+      plot_ly(sub_world_data2(),x=~time,y=~data, color = ~country, colors = "Set2") %>% add_lines()
     }
     
     
@@ -348,57 +328,7 @@ server <- shinyServer(function(input, output, session){
     #ggplot(sub_world_data(), aes(x=time, y = data, colour =country ,group = country,shape=country)) + 
     #geom_line(size = 2)
   })
-  #------------------------------
-  # Confirmed
-  #------------------------------
-  data_directory = "data/worldMap"
-  df_confirmed = read.csv( file.path(data_directory, "time_series_covid_19_confirmed.csv"),sep =",", stringsAsFactors = F)
-  #df_confirmed <- read.csv(file = "data/worldMap/time_series_covid_19_confirmed.csv",sep =",")
-  df_confirmed <- df_confirmed %>% rename(Country = "Country.Region") 
   
-  Conf_wide_1 <- read.csv(file = "data/worldMap/Conf_wide1.csv",sep = ",")
-  
-  df_confirmed <- merge(df_confirmed,Conf_wide_1,by ="Country",all=T )
-  df_confirmed <- df_confirmed %>% filter(Lat != "NA")
-  
-  world <- ggplot() +
-    borders("world", colour = "gray85", fill = "gray80") +
-    theme_map()
-  
-  data <- filter(df_confirmed,df_confirmed[,ncol(df_confirmed)]>0)
-  Count <- as.integer(unlist(df_confirmed[,ncol(df_confirmed)]))
-  
-  map_Conf <- world +
-    geom_point(aes(x = Long, y = Lat, size = Count,name= Country),
-               data = df_confirmed, 
-               colour = 'purple', alpha = .5) +
-    scale_size_continuous(range = c(1,8), 
-                          breaks = c(250, 500, 750, 1000)) +
-    labs(size = 'Cases')
-  output$covidConfirmed = renderPlotly({
-    ggplotly(map_Conf, tooltip = c('Count','Country'))
-  })
-  
-  #------------------------------
-  # deaths
-  #------------------------------
-  df_deaths <- read.csv(file = "data/worldMap/time_series_covid_19_deaths.csv",sep =",")
-  df_deaths <- df_deaths %>% 
-    rename(Country = "Country.Region") 
-  
-  data <- filter(df_deaths,df_deaths[,ncol(df_deaths)]>0)
-  Count2 <- as.integer(unlist(data[,ncol(df_deaths)]))
-  
-  map_death <- world +
-    geom_point(aes(x = data$Long, y = data$Lat, size = Count2, name= Country),
-               data = data, 
-               colour = 'red', alpha = .5) +
-    scale_size_continuous(range = c(1, 8), 
-                          breaks = c(250, 500, 750, 1000)) +
-    labs(size = 'Cases')
-  output$covidDeaths = renderPlotly({
-    ggplotly(map_death, tooltip = c('Count','Country'))
-  })
 })
 
 
