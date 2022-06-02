@@ -9,6 +9,8 @@ library(showtext)
 library(plotly)
 library(ggthemes)
 library(maps)
+library(shinyjs)
+library(shinycssloaders)
 
 countries <- c('tw','gb','us')
 img_urls <- paste0(
@@ -63,13 +65,13 @@ ui <- dashboardPage(
   ),
   # body
   dashboardBody(
+    useShinyjs(),
     tags$style(HTML(".main-header {height:20px}
                      .main-sidebar {
                            font-size: 25px!important;
                            background-color:red}
                      .container-fluid{
-                           margin-left:-20px;
-
+                           margin-left:-20px;}
                     ")),
     # Boxes need to be put in a row (or column)
     tabItems(
@@ -88,15 +90,107 @@ ui <- dashboardPage(
             # The id lets us use input$tabset1 on the server to find the current tab
             id = "tabset1", height = "300px",
             tabPanel("確診人數",
-                     plotlyOutput(outputId = "covidConfirmed", height = "750px")
+                     plotlyOutput(outputId = "covidConfirmed", height = "750px")%>% withSpinner(color="#dd4b39")
             ),
             tabPanel("死亡人數", 
-                     plotlyOutput(outputId = "covidDeaths", height = "750px")
+                     plotlyOutput(outputId = "covidDeaths", height = "750px")%>% withSpinner(color="#dd4b39")
             )
           )
           
         )
 
+      ),
+      tabItem(
+        tabName = "about",
+        fluidPage(
+          fluidRow(
+            img(src = 'top.jpg',width = "110%")
+          ),
+        ),
+        h1('TSDC 5th',style = "font-size:60px;
+                             font-weight: 600;
+                             margin-top:40px;
+                             margin-left:100px;
+                             margin-bottom:50px;
+                             background:white;
+                             border-width: 5px; 
+                             border-style:solid ;
+                             width: 270px;
+                             border-color: rgb(37, 37, 37); 
+                             padding: 5px;
+                             text-align: center;
+                             border-radius: 50px;
+                             "),
+        tags$div(' ',style="width:100%;
+                       height: 5px;
+                       background: rgb(37, 37, 37);
+                       position: relative;
+                       display: block;
+                       margin: auto;
+                       width:90%;
+            "),
+        tags$div(
+          p('專案背景',style="@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
+                        font-size:45px;
+                        font-weight:700;
+                        margin-left:50px;
+                        margin-bottom:20px;
+                        margin-top:50px;
+                        font-family: 'Noto Sans TC', sans-serif;
+          "),
+          p('2019年年末，首例新冠肺炎案例出現於中國境內。時至今日，肺炎已蔓延至全球各地.。
+            2021年的五月，新冠肺炎的問題也在台灣爆發，本土單日的確診案例從雙位數飆升至200多人，
+            距離四級警戒的全台封城可說是只差一步。而台灣利用不到半年的時間，從三級警戒達到零確診的紀錄。',
+            style="
+          font-size:30px;
+          margin-left:50px;
+          margin-bottom:40px;
+          font-family: 'Noto Sans TC', sans-serif;
+          "),
+          p('從產業角度來看，各大行業也造成了巨大的影響，交通層面上，禁止了非本國籍的乘客進入，
+            因此飛機和大眾交通工具的使用上明顯比以往減少了許多。餐飲的方面，伴隨著不同區域的嚴重程度，
+            也有禁止內用、採用梅花座、定期消毒等規定，依各家餐廳是否提供外帶，也影響著店家的收益。',
+            style="
+          font-size:30px;
+          margin-left:50px;
+          margin-bottom:60px;
+          font-family: 'Noto Sans TC', sans-serif;
+          "),
+          p('專案動機',style="
+                        font-size:45px;
+                        font-weight:700;
+                        margin-left:50px;
+                        margin-bottom:20px;
+                        font-family: 'Noto Sans TC', sans-serif;
+          "),
+          p(' 無獨有偶，據全球經貿報導指出，旅遊業出現了大量退房和退票的情況。部分工廠也因疫情影響而延後復工復產。',
+            style="
+          font-size:30px;
+          margin-left:50px;
+          margin-bottom:40px;
+          font-family: 'Noto Sans TC', sans-serif;
+          "),
+          p('然而，根據網路新聞所提供的手機簡訊調查，有將近66%民眾的收入受到疫情影響，而在防疫期間隨著確診人數的增長、
+            或者警戒等級的調升，衛福部也祭出更嚴謹的疫情政策。其中又以餐飲業、觀光業、旅遊業甚為嚴重。 ',
+            style="
+          font-size:30px;
+          margin-left:50px;
+          margin-bottom:40px;
+          font-family: 'Noto Sans TC', sans-serif;
+          "),
+          p('一直以來交通、餐飲、旅遊等行業皆和我們的生活密不可分，在疫情下，許多民眾皆減少了這部分的需求。
+            而在生活或是消費上，民眾也因應了疫情政策而有了不同以往的消費模式。 我們希望能夠透過專案的發想與研究，
+            深入探討疫情對於各個常見的行業有何影響。 ',
+            style="
+          font-size:30px;
+          margin-left:50px;
+          margin-bottom:40px;
+          font-family: 'Noto Sans TC', sans-serif;
+          "),
+          style="display: block;
+                 margin: auto;
+                 width:90%"
+        )
       ),
       tabItem(
         tabName = "TAIWAN",
@@ -128,7 +222,11 @@ ui <- dashboardPage(
             )
           ),
           mainPanel(
-            plotlyOutput(outputId = "TaiwanSaleplot", height = "500px"),
+            plotlyOutput(outputId = "TaiwanSaleplot", height = "500px")%>% withSpinner(color="#dd4b39"),
+            #hidden(box(id = "warning",
+            #  width = 12,height = 500, background = "yellow",
+            #  "A box with a solid black background",style = "font-size:40px;text-align: center;padding-top:230px"
+            #)),
             tableOutput("values_AreaSale"),
             verbatimTextOutput("summary_AreaSale"),
             style = "padding-right:50px;"
@@ -137,27 +235,40 @@ ui <- dashboardPage(
       ),
       tabItem(
         tabName = "world",
+        tags$style(HTML("
+                     .tabbable .col-sm-8 div{
+                        margin-top:15px;
+                     }
+                    ")),
         tags$div(
           tabsetPanel(
             tabPanel(
               "台灣指標",
               sidebarLayout(
                 sidebarPanel(
-                  sliderInput("slider_taiwanall", "時間:",
+                  sliderInput("slider_taiwanall", "時間：",
                               min = as.Date("2017-01-01"), max = as.Date("2021-11-01"), value = c(as.Date("2018-11-01"), as.Date("2020-11-01")),
                               timeFormat = "%Y/%m"
                   ),
-                  awesomeCheckboxGroup(
-                    inputId = "Group_taiwanall", label = "123", choices = c("銷售額" = "total", "銷售額年增率" = "growth", "失業率" = "n_unem", "油價" = "n_oil"),
-                    selected = "total", status = "danger"
+                  #awesomeCheckboxGroup(
+                  #  inputId = "Group_taiwanall", label = "指標（與銷售額比較）：", choices = c("銷售額年增率" = "growth", "失業率" = "n_unem", "油價" = "n_oil"),
+                  #  selected = "total", status = "danger"
+                  #),
+                  p("指標（與銷售額比較）:",style = "font-weight:600"),
+                  awesomeCheckbox(
+                    inputId = "growth",label = "銷售額年增率",status = "danger"
                   ),
+                  awesomeCheckbox(
+                    inputId = "unem",label = "失業率",status = "danger"
+                  ),
+                  awesomeCheckbox(
+                    inputId = "ios",label = "油價",status = "danger"
+                  )
                 ),
                 mainPanel(
-                  plotlyOutput(outputId = "TaiwanAllplot", height = "500px"),
-                  plotlyOutput(outputId = "TaiwanAllplot_growth", height = "500px"),
-                  plotlyOutput(outputId = "TaiwanAllplot_n_unem", height = "500px"),
-                  plotlyOutput(outputId = "TaiwanAllplot_oil", height = "500px"),
-                  plotlyOutput(outputId = "TaiwanAllplot_test", height = "500px"),
+                  hidden(plotlyOutput(outputId = "TaiwanAllplot_growth", height = "500px")),
+                  hidden(plotlyOutput(outputId = "TaiwanAllplot_n_unem", height = "500px")),
+                  hidden(plotlyOutput(outputId = "TaiwanAllplot_oil", height = "500px")),
                   tableOutput("values"),
                   verbatimTextOutput("summary"),
                   style = "
@@ -176,10 +287,10 @@ ui <- dashboardPage(
                   ),
                   awesomeCheckboxGroup(
                     inputId = "Group_worldall", label = "指標", choices = c("失業率" = "n_unem", "油價" = "n_oil"),
-                    selected = "銷售額"
+                    selected = "n_unem"
                   ),
                   multiInput(
-                    inputId = "Group_worldcountry", label = "國家 :", choices = NULL,
+                    inputId = "Group_worldcountry", label = "國家 :", choices = NULL,selected = "tw",
                     choiceNames = lapply(
                       seq_along(countries),
                       function(i) {
@@ -193,7 +304,7 @@ ui <- dashboardPage(
                   )
                 ),
                 mainPanel(
-                  plotlyOutput(outputId = "WorldAllplot", height = "500px"),
+                  plotlyOutput(outputId = "WorldAllplot", height = "500px")%>% withSpinner(color="#dd4b39"),
                   tableOutput("WorldAll_values"),
                   verbatimTextOutput("WorldAll_summary"),
                   style = "padding-right:50px;"
@@ -253,14 +364,9 @@ server <- shinyServer(function(input, output, session){
     sub_data()
   })
   output$summary <- renderPrint({  
-    input$Group_taiwanall
+    input$oil
   })
   
-  output$TaiwanAllplot = renderPlotly({
-    plot_ly(sub_data(), x = ~time, y = ~total,name = "銷售額") %>% add_lines %>%
-      add_lines(x = ~time, y = ~n_unem, mode = "lines",yaxis = "y2", name = "失業率")%>%
-      layout(title = "<b>銷售額與失業率</b>",yaxis2 = list(overlaying = "y", side = "right"))
-  })
   output$TaiwanAllplot_growth = renderPlotly({
     plot_ly(sub_data(), x = ~time, y = ~total,name = "銷售額") %>% add_lines %>%
       add_lines(x = ~time, y = ~growth, mode = "lines",yaxis = "y2", name = "銷售額年增率")%>%
@@ -276,18 +382,28 @@ server <- shinyServer(function(input, output, session){
       add_lines(x = ~time, y = ~n_oil, mode = "lines",yaxis = "y2", name = "油價")%>%
       layout(title = "<b>銷售額與油價</b>",yaxis2 = list(overlaying = "y", side = "right"))
   })
-  output$TaiwanAllplot_test = renderPlotly({
-    plot_ly(sub_data(), x = ~time, y = ~total,name = "銷售額") %>% add_lines %>%
-      add_lines(x = ~time, y = ~growth, mode = "lines",yaxis = "y2", name = "銷售額年增率")%>%
-      add_lines(x = ~time, y = ~n_unem, mode = "lines",yaxis = "y3", name = "失業率")%>%
-      add_lines(x = ~time, y = ~n_oil, mode = "lines",yaxis = "y4", name = "油價")%>%
-      layout(
-        title = "台灣指標比較", yaxis2 = y2, yaxis3 = y3, yaxis4 = y4,
-        xaxis = list(domain = c(0.1, 0.95))
-        )
-      
+  observeEvent(input$growth, {
+    if(input$growth == TRUE){
+      showElement("TaiwanAllplot_growth")
+    }else{
+      hideElement("TaiwanAllplot_growth")
+    }
   })
-  
+  observeEvent(input$unem, {
+    if(input$unem == TRUE){
+      showElement("TaiwanAllplot_n_unem")
+    }else{
+      hideElement("TaiwanAllplot_n_unem")
+    }
+  })
+  observeEvent(input$ios, {
+    if(input$ios == TRUE){
+      showElement("TaiwanAllplot_oil")
+    }else{
+      hideElement("TaiwanAllplot_oil")
+    }
+  })
+
   #---------------------------------------------------
   #--------------------World_All---------------------
   #---------------------------------------------------
@@ -386,13 +502,17 @@ server <- shinyServer(function(input, output, session){
   #------------------------------
   df_deaths <- read.csv(file = "data/worldMap/time_series_covid_19_deaths.csv",sep =",")
   df_deaths <- df_deaths %>% 
-    rename(country = "Country.Region") 
+    rename(Country = "Country.Region") 
+  Conf_wide_2 <- read.csv(file = "data/worldMap/Conf_wide2.csv",sep = ",")
+  
+  df_deaths <- merge(df_deaths,Conf_wide_2,by ="Country",all=T )
+  df_deaths <- df_deaths %>% filter(Lat != "NA")
   
   data <- filter(df_deaths,df_deaths[,ncol(df_deaths)]>0)
   Countdeath <- as.integer(unlist(data[,ncol(df_deaths)]))
   
   map_death <- world +
-    geom_point(aes(x = Long, y = Lat, size = Countdeath, name= country),
+    geom_point(aes(x = Long, y = Lat, size = Countdeath, name= Country),
                data = data, 
                colour = 'red', alpha = .5) +
     scale_size_continuous(range = c(1, 8), 
