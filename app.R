@@ -74,6 +74,27 @@ ui <- dashboardPage(
     tabItems(
       tabItem(
         tabName = "Firstpage",
+        tags$div(" ", style = "padding-top:35px"),
+        tags$style(HTML("
+                   .nav-tabs-custom a{font-size:25px}
+                    ")),
+        fluidRow(
+          #valueBox(15*200,"全球確診人數",icon = icon("hourglass-3")),
+        ),
+        fluidRow(
+          tabBox(
+            title = " ",width = 100,
+            # The id lets us use input$tabset1 on the server to find the current tab
+            id = "tabset1", height = "300px",
+            tabPanel("確診人數",
+                     plotlyOutput(outputId = "covidConfirmed", height = "750px")
+            ),
+            tabPanel("死亡人數", 
+                     plotlyOutput(outputId = "covidDeaths", height = "750px")
+            )
+          )
+          
+        )
 
       ),
       tabItem(
@@ -327,6 +348,57 @@ server <- shinyServer(function(input, output, session){
     
     #ggplot(sub_world_data(), aes(x=time, y = data, colour =country ,group = country,shape=country)) + 
     #geom_line(size = 2)
+  })
+  
+  #------------------------------
+  # Confirmed
+  #------------------------------
+  
+  df_confirmed <- read.csv(file = "C:/Users/FX505/Downloads/time_series_covid_19_confirmed.csv",sep =",")
+  df_confirmed <- df_confirmed %>% rename(Country = "Country.Region") 
+  
+  Conf_wide_1 <- read.csv(file = "C:/Users/FX505/Downloads/Conf_wide1.csv",sep = ",")
+  
+  df_confirmed <- merge(df_confirmed,Conf_wide_1,by ="Country",all=T )
+  df_confirmed <- df_confirmed %>% filter(Lat != "NA")
+  
+  world <- ggplot() +
+    borders("world", colour = "gray85", fill = "gray80") +
+    theme_map()
+  
+  data <- filter(df_confirmed,df_confirmed[,ncol(df_confirmed)]>0)
+  Count <- as.integer(unlist(df_confirmed[,ncol(df_confirmed)]))
+  
+  map_Conf <- world +
+    geom_point(aes(x = Long, y = Lat, size = Count,name= Country),
+               data = df_confirmed, 
+               colour = 'purple', alpha = .5) +
+    scale_size_continuous(range = c(1,8), 
+                          breaks = c(250, 500, 750, 1000)) +
+    labs(size = 'Cases')
+  output$covidConfirmed = renderPlotly({
+    ggplotly(map_Conf, tooltip = c('Count','Country'))
+  })
+  
+  #------------------------------
+  # deaths
+  #------------------------------
+  df_deaths <- read.csv(file = "C:/Users/FX505/Downloads/time_series_covid_19_deaths.csv",sep =",")
+  df_deaths <- df_deaths %>% 
+    rename(country = "Country.Region") 
+  
+  data <- filter(df_deaths,df_deaths[,ncol(df_deaths)]>0)
+  Countdeath <- as.integer(unlist(data[,ncol(df_deaths)]))
+  
+  map_death <- world +
+    geom_point(aes(x = Long, y = Lat, size = Countdeath, name= country),
+               data = data, 
+               colour = 'red', alpha = .5) +
+    scale_size_continuous(range = c(1, 8), 
+                          breaks = c(250, 500, 750, 1000)) +
+    labs(size = 'Cases')
+  output$covidDeaths = renderPlotly({
+    ggplotly(map_death, tooltip = c('Countdeath','country'))
   })
   
 })
