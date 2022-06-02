@@ -193,7 +193,7 @@ server <- shinyServer(function(input, output, session){
   
   TaiwanSaleArea <- reactive({
     data_directory = "data/"
-    TaiwanSaleIndustry =  read.csv( file.path(data_directory, "tw_sale_industry.csv"), stringsAsFactors = F)
+    TaiwanSaleIndustry =  read.csv( file.path(data_directory, "tw_sale_industry.csv"), stringsAsFactors = F, fileEncoding ="UTF-8")
     #---------------------
     TaiwanSaleIndustry$time = as.Date( TaiwanSaleIndustry$time ,format="%Y-%m-%d")
     TaiwanSaleArea <- subset(TaiwanSaleIndustry, TaiwanSaleIndustry$time>=as.Date(input$slider_taiwan_sale_industry[1],format="%Y-%m-%d") & TaiwanSaleIndustry$time<=as.Date(input$slider_taiwan_sale_industry[2],format="%Y-%m-%d")& 
