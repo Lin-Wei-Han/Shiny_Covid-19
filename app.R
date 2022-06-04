@@ -11,6 +11,7 @@ library(ggthemes)
 library(maps)
 library(shinyjs)
 library(shinycssloaders)
+library(dashboardthemes)
 
 countries <- c('tw','gb','us')
 img_urls <- paste0(
@@ -241,7 +242,9 @@ ui <- dashboardPage(
                      }
                     ")),
         tags$div(
-          tabsetPanel(
+          #tabsetPanel(
+          tabBox(
+            width = 70,id = "tabset1",
             tabPanel(
               "台灣指標",
               sidebarLayout(
