@@ -11,7 +11,6 @@ library(ggthemes)
 library(maps)
 library(shinyjs)
 library(shinycssloaders)
-library(dashboardthemes)
 
 countries <- c('tw','gb','us')
 img_urls <- paste0(
