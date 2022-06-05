@@ -322,6 +322,11 @@ ui <- dashboardPage(
 )
 
 server <- shinyServer(function(input, output, session){
+  autoInvalidate <- reactiveTimer(intervalMs = 50*1000)
+  observe({
+    autoInvalidate()
+    cat(".")
+  })
   #---------------------------------------------------
   #--------------------Taiwan_Sale--------------------
   #---------------------------------------------------
