@@ -46,19 +46,19 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       menuItem(
-        "Home",
+        "首頁",
         icon = icon("home", style = "padding-right:40px"), tabName = "Firstpage"
       ),
       menuItem(
-        "About",
+        "關於我們",
         icon = icon("marker", style = "padding-right:40px"), tabName = "about"
       ),
       menuItem(
-        "Taiwan data",
+        "台灣銷售額",
         icon = icon("table", style = "padding-right:40px"), tabName = "TAIWAN"
       ),
       menuItem(
-        "World",
+        "各國指標",
         icon = icon("globe", style = "padding-right:40px"), tabName = "world"
       )
     )
@@ -107,7 +107,7 @@ ui <- dashboardPage(
             img(src = 'top.jpg',width = "110%")
           ),
         ),
-        h1('TSDC 5th',style = "font-size:60px;
+        h1('TSDC 5th',style = "font-size:50px;
                              font-weight: 600;
                              margin-top:40px;
                              margin-left:100px;
@@ -115,14 +115,14 @@ ui <- dashboardPage(
                              background:white;
                              border-width: 5px; 
                              border-style:solid ;
-                             width: 270px;
+                             width: 250px;
                              border-color: rgb(37, 37, 37); 
                              padding: 5px;
                              text-align: center;
                              border-radius: 50px;
                              "),
         tags$div(' ',style="width:100%;
-                       height: 5px;
+                       height: 4px;
                        background: rgb(37, 37, 37);
                        position: relative;
                        display: block;
@@ -131,7 +131,7 @@ ui <- dashboardPage(
             "),
         tags$div(
           p('專案背景',style="@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
-                        font-size:45px;
+                        font-size:35px;
                         font-weight:700;
                         margin-left:50px;
                         margin-bottom:20px;
@@ -142,7 +142,7 @@ ui <- dashboardPage(
             2021年的五月，新冠肺炎的問題也在台灣爆發，本土單日的確診案例從雙位數飆升至200多人，
             距離四級警戒的全台封城可說是只差一步。而台灣利用不到半年的時間，從三級警戒達到零確診的紀錄。',
             style="
-          font-size:30px;
+          font-size:20px;
           margin-left:50px;
           margin-bottom:40px;
           font-family: 'Noto Sans TC', sans-serif;
@@ -151,13 +151,13 @@ ui <- dashboardPage(
             因此飛機和大眾交通工具的使用上明顯比以往減少了許多。餐飲的方面，伴隨著不同區域的嚴重程度，
             也有禁止內用、採用梅花座、定期消毒等規定，依各家餐廳是否提供外帶，也影響著店家的收益。',
             style="
-          font-size:30px;
+          font-size:20px;
           margin-left:50px;
           margin-bottom:60px;
           font-family: 'Noto Sans TC', sans-serif;
           "),
           p('專案動機',style="
-                        font-size:45px;
+                        font-size:35px;
                         font-weight:700;
                         margin-left:50px;
                         margin-bottom:20px;
@@ -165,7 +165,7 @@ ui <- dashboardPage(
           "),
           p(' 無獨有偶，據全球經貿報導指出，旅遊業出現了大量退房和退票的情況。部分工廠也因疫情影響而延後復工復產。',
             style="
-          font-size:30px;
+          font-size:20px;
           margin-left:50px;
           margin-bottom:40px;
           font-family: 'Noto Sans TC', sans-serif;
@@ -173,7 +173,7 @@ ui <- dashboardPage(
           p('然而，根據網路新聞所提供的手機簡訊調查，有將近66%民眾的收入受到疫情影響，而在防疫期間隨著確診人數的增長、
             或者警戒等級的調升，衛福部也祭出更嚴謹的疫情政策。其中又以餐飲業、觀光業、旅遊業甚為嚴重。 ',
             style="
-          font-size:30px;
+          font-size:20px;
           margin-left:50px;
           margin-bottom:40px;
           font-family: 'Noto Sans TC', sans-serif;
@@ -182,7 +182,7 @@ ui <- dashboardPage(
             而在生活或是消費上，民眾也因應了疫情政策而有了不同以往的消費模式。 我們希望能夠透過專案的發想與研究，
             深入探討疫情對於各個常見的行業有何影響。 ',
             style="
-          font-size:30px;
+          font-size:20px;
           margin-left:50px;
           margin-bottom:40px;
           font-family: 'Noto Sans TC', sans-serif;
@@ -235,17 +235,17 @@ ui <- dashboardPage(
       ),
       tabItem(
         tabName = "world",
-        tags$style(HTML("
-                     .tabbable .col-sm-8 div{
-                        margin-top:15px;
-                     }
-                    ")),
         tags$div(
           #tabsetPanel(
           tabBox(
             width = 70,id = "tabset1",
             tabPanel(
               "台灣指標",
+              tags$style(HTML("
+                     .col-sm-8 div{
+                        margin-bottom:40px;
+                     }
+                    ")),
               sidebarLayout(
                 sidebarPanel(
                   sliderInput("slider_taiwanall", "時間：",
@@ -287,9 +287,12 @@ ui <- dashboardPage(
                               min = as.Date("2017-01-01"), max = as.Date("2021-11-01"), value = c(as.Date("2018-11-01"), as.Date("2020-11-01")),
                               timeFormat = "%Y/%m"
                   ),
-                  awesomeCheckboxGroup(
-                    inputId = "Group_worldall", label = "指標", choices = c("失業率" = "n_unem", "油價" = "n_oil"),
-                    selected = "n_unem"
+                  p("指標:",style = "font-weight:600"),
+                  awesomeCheckbox(
+                    inputId = "unemw",label = "失業率",status = "danger",value = TRUE
+                  ),
+                  awesomeCheckbox(
+                    inputId = "iosw",label = "油價",status = "danger"
                   ),
                   multiInput(
                     inputId = "Group_worldcountry", label = "國家 :", choices = NULL,selected = "tw",
@@ -298,7 +301,7 @@ ui <- dashboardPage(
                       function(i) {
                         tagList(
                           tags$img(src = img_urls[i], width = 50, height = 30),
-                          countries[i]
+                          
                         )
                       }
                     ),
@@ -306,12 +309,18 @@ ui <- dashboardPage(
                   )
                 ),
                 mainPanel(
-                  plotlyOutput(outputId = "WorldAllplot", height = "500px")%>% withSpinner(color="#dd4b39"),
+                  hidden(plotlyOutput(outputId = "WorldUnemplot", height = "500px")),
+                  hidden(plotlyOutput(outputId = "Worldoilplot", height = "500px")),
                   tableOutput("WorldAll_values"),
                   verbatimTextOutput("WorldAll_summary"),
                   style = "padding-right:50px;"
                 )
               )
+            ),
+            fluidRow(
+              includeCSS("style.css"),
+              includeHTML("timeline.html"),
+              includeScript(path = "javascript.js") 
             )
           ),
           style = "margin-top:70px;margin-left:40px"
@@ -349,7 +358,8 @@ server <- shinyServer(function(input, output, session){
   })
   
   output$TaiwanSaleplot = renderPlotly({
-    plot_ly(TaiwanSaleArea(),x=~time,y=~total, color = ~industry ,colors = "Set2") %>% add_lines()
+    plot_ly(TaiwanSaleArea(),x=~time,y=~total, color = ~industry ,colors = "Set2") %>% add_lines()%>% layout(xaxis = list(title = "時間以兩個月為一期"),
+                                                                                                             yaxis = list (title = "銷售額"))
     #ggplot(TaiwanSaleArea(), aes(x=time, y = total, colour =industry ,group = industry,shape=industry)) + 
     #  geom_line(size = 2)
   })
@@ -374,20 +384,24 @@ server <- shinyServer(function(input, output, session){
     input$oil
   })
   
+  growth <- list(overlaying = "y",side = "right",title = "<b>銷售額年增率</b>")
+  unem <- list(overlaying = "y",side = "right",title = "<b>失業率</b>")
+  oil <- list(overlaying = "y",side = "right",title = "<b>油價</b>")
+  
   output$TaiwanAllplot_growth = renderPlotly({
     plot_ly(sub_data(), x = ~time, y = ~total,name = "銷售額") %>% add_lines %>%
       add_lines(x = ~time, y = ~growth, mode = "lines",yaxis = "y2", name = "銷售額年增率")%>%
-      layout(title = "<b>銷售額與銷售額年增率</b>",yaxis2 = list(overlaying = "y", side = "right"))
+      layout(title = "<b>銷售額與銷售額年增率</b>",xaxis = list(title="時間以兩個月為一期"),yaxis = list(title="銷售額"),yaxis2 = growth)
   })
   output$TaiwanAllplot_n_unem = renderPlotly({
     plot_ly(sub_data(), x = ~time, y = ~total,name = "銷售額") %>% add_lines %>%
       add_lines(x = ~time, y = ~n_unem, mode = "lines",yaxis = "y2", name = "失業率")%>%
-      layout(title = "<b>銷售額與失業率</b>",yaxis2 = list(overlaying = "y", side = "right"))
+      layout(title = "<b>銷售額與失業率</b>",xaxis = list(title="時間以兩個月為一期"),yaxis = list(title="銷售額"),yaxis2 = unem)
   })
   output$TaiwanAllplot_oil = renderPlotly({
     plot_ly(sub_data(), x = ~time, y = ~total,name = "銷售額") %>% add_lines %>%
       add_lines(x = ~time, y = ~n_oil, mode = "lines",yaxis = "y2", name = "油價")%>%
-      layout(title = "<b>銷售額與油價</b>",yaxis2 = list(overlaying = "y", side = "right"))
+      layout(title = "<b>銷售額與油價</b>",xaxis = list(title="時間以兩個月為一期"),yaxis = list(title="銷售額"),yaxis2 = oil)
   })
   observeEvent(input$growth, {
     if(input$growth == TRUE){
@@ -423,22 +437,13 @@ server <- shinyServer(function(input, output, session){
     #world =  read.csv( file.path(data_directory, "uk_all.csv"), stringsAsFactors = F)
     #---------------------
     world$time = as.Date( world$time ,format="%Y-%m-%d")
-    world <- world %>% pivot_longer(-c(time,country),names_to = "index",values_to = "data")
+    #world <- world %>% pivot_longer(-c(time,country),names_to = "index",values_to = "data")
     #world <- world %>% pivot_longer(-c(time,country),names_to = "index",values_to = "data")
     sub_world_data <- subset(world, world$time>=as.Date(input$slider_worldall[1],format="%Y-%m-%d") &  world$time<=as.Date(input$slider_worldall[2],format="%Y-%m-%d")& 
-                               world$index %in%"n_unem" &
+                               #world$index %in%"n_unem" &
                                #world$n_unem <-  input$Group_worldall=="失業率" &
                                #world$n_oil <-  input$Group_worldall=="油價" &
                                world$country %in% input$Group_worldcountry)
-  })
-  sub_world_data2 <- reactive({
-    data_directory = "data/"
-    world = read.csv( file.path(data_directory, "world.csv"), stringsAsFactors = F)
-    world$time = as.Date( world$time ,format="%Y-%m-%d")
-    world <- world %>% pivot_longer(-c(time,country),names_to = "index",values_to = "data")
-    sub_world_data2 <- subset(world, world$time>=as.Date(input$slider_worldall[1],format="%Y-%m-%d") &  world$time<=as.Date(input$slider_worldall[2],format="%Y-%m-%d")& 
-                                world$index %in%"n_oil" &
-                                world$country %in% input$Group_worldcountry)
   })
   
   output$WorldAll_values <- renderTable({
@@ -448,30 +453,30 @@ server <- shinyServer(function(input, output, session){
     input$Group_worldcountry
   })
   
-  output$WorldAllplot = renderPlotly({
-    if (all(input$Group_worldall == c("n_unem","n_oil")))  {
-      subplot(
-        plot_ly(sub_world_data(),x=~time,y=~data, color = ~country, colors = "Set2") %>% add_lines(),
-        plot_ly(sub_world_data2(),x=~time,y=~data, color = ~country, colors = "Set2") %>% add_lines(), nrows = 2
-      )
-    }  
-    else if (all(input$Group_worldall == "n_unem"))  {
-      plot_ly(sub_world_data(),x=~time,y=~data, color = ~country, colors = "Set2") %>% add_lines()
+  observeEvent(input$unemw, {
+    if(input$unemw == TRUE){
+      showElement("WorldUnemplot")
+    }else{
+      hideElement("WorldUnemplot")
     }
-    else if (all(input$Group_worldall == "n_oil"))  {
-      plot_ly(sub_world_data2(),x=~time,y=~data, color = ~country, colors = "Set2") %>% add_lines()
+  })
+  observeEvent(input$iosw, {
+    if(input$iosw == TRUE){
+      showElement("Worldoilplot")
+    }else{
+      hideElement("Worldoilplot")
     }
-    
-    
-    #plot_ly(sub_world_data(),x=~time) %>%
-    #  add_lines(x=input$slider_worldall,y=input$Group_worldall,name="input$Group_worldall")%>%
-    #  add_lines(x=input$slider_worldall,y=input$Group_worldall,name="input$Group_worldall",yaxis="y2")%>%
-    #  layout(
-    #    title="y",yaxis2=a,xaxis=list(title="period")
-    #  )
-    
-    #ggplot(sub_world_data(), aes(x=time, y = data, colour =country ,group = country,shape=country)) + 
-    #geom_line(size = 2)
+  })
+  
+  output$WorldUnemplot = renderPlotly({
+    plot_ly(sub_world_data(),x=~time,y=~n_unem, color = ~country, colors = "Set2") %>% add_lines()%>% layout(title = "<b>各國失業率</b>",
+                                                                                                             xaxis = list(title = "時間以兩個月為一期"),
+                                                                                                             yaxis = list (title = "失業率"))
+  })
+  output$Worldoilplot = renderPlotly({
+    plot_ly(sub_world_data(),x=~time,y=~n_oil, color = ~country, colors = "Set2") %>% add_lines()%>% layout(title = "<b>各國油價</b>",
+                                                                                                            xaxis = list(title = "時間以兩個月為一期"),
+                                                                                                            yaxis = list (title = "油價"))
   })
   
   #------------------------------
