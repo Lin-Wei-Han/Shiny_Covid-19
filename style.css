@@ -14,7 +14,8 @@ html {
 
 body {
   font-size: 1.6rem;
-  font-family: "Source Sans Pro", sans-serif;
+  font-family: "Microsoft JhengHei";
+  /*font-family: "Source Sans Pro", sans-serif;*/
   color: #383838;
   background-color: #f8f8f8;
 }
@@ -317,15 +318,15 @@ Main Components
 }
 .cd-horizontal-timeline .events-content em {
   display: block;
-  font-style: italic;
   margin: 10px auto;
 }
 .cd-horizontal-timeline .events-content em::before {
   content: '- ';
 }
-.cd-horizontal-timeline .events-content p {
-  font-size: 1.4rem;
-  color: #959595;
+.cd-horizontal-timeline .events-content h4 {
+  font-size: 30px;
+  font-family: "Microsoft JhengHei";
+  color: #242424;
 }
 .cd-horizontal-timeline .events-content em, .cd-horizontal-timeline .events-content p {
   line-height: 1.6;
