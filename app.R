@@ -11,12 +11,31 @@ library(ggthemes)
 library(maps)
 library(shinyjs)
 library(shinycssloaders)
+library(timevis)
+library(lubridate)
 
 countries <- c('tw','gb','us')
 img_urls <- paste0(
   'https://cdn.rawgit.com/lipis/flag-icon-css/master/flags/4x3/',
   countries, '.svg'
 )
+data_directory = "data/"
+timeLine = read.csv( file.path(data_directory, "event.csv"), stringsAsFactors = F)
+timeLine <- timeLine %>% pivot_longer(-c(time),names_to = "group",values_to = "content")
+#timeLine$time = as.Date( timeLine$time ,format="%Y-%m-%d")
+timeLine$time = ymd(timeLine$time)  
+time_data <- data.frame(
+  id      = 1:531,
+  content = timeLine$content,
+  start   = timeLine$time,
+  group = timeLine$group
+)
+
+timevisDataGroups <- data.frame(
+  id = unique(timeLine$group),
+  content = unique(timeLine$group)
+)
+
 y2 <- list(
   tickfont = list(color = "#2ca02c"),
   titlefont = list(color = "#2ca02c"),
@@ -95,10 +114,10 @@ ui <- dashboardPage(
             # The id lets us use input$tabset1 on the server to find the current tab
             id = "tabset1", height = "300px",
             tabPanel("確診人數",
-                     plotlyOutput(outputId = "covidConfirmed", height = "750px")%>% withSpinner(color="#dd4b39")
+                     plotlyOutput(outputId = "covidConfirmed", height = "800px")%>% withSpinner(color="#dd4b39")
             ),
             tabPanel("死亡人數", 
-                     plotlyOutput(outputId = "covidDeaths", height = "750px")%>% withSpinner(color="#dd4b39")
+                     plotlyOutput(outputId = "covidDeaths", height = "800px")%>% withSpinner(color="#dd4b39")
             )
           )
           
@@ -232,8 +251,8 @@ ui <- dashboardPage(
             #  width = 12,height = 500, background = "yellow",
             #  "A box with a solid black background",style = "font-size:40px;text-align: center;padding-top:230px"
             #)),
-            tableOutput("values_AreaSale"),
-            verbatimTextOutput("summary_AreaSale"),
+            #tableOutput("values_AreaSale"),
+            #verbatimTextOutput("summary_AreaSale"),
             style = "padding-right:50px;"
           )
         )
@@ -276,8 +295,8 @@ ui <- dashboardPage(
                   hidden(plotlyOutput(outputId = "TaiwanAllplot_growth", height = "500px")),
                   hidden(plotlyOutput(outputId = "TaiwanAllplot_n_unem", height = "500px")),
                   hidden(plotlyOutput(outputId = "TaiwanAllplot_oil", height = "500px")),
-                  tableOutput("values"),
-                  verbatimTextOutput("summary"),
+                  #tableOutput("values"),
+                  #verbatimTextOutput("summary"),
                   style = "
                         padding-right:50px;
                         "
@@ -323,9 +342,10 @@ ui <- dashboardPage(
                   style = "padding-right:50px;"
                 )
               ),
-              includeHTML('timeline.html'),
-              includeCSS('style.css'),
-              includeScript('javascript.js')
+              timevisOutput("timelineGroups"),
+              #includeHTML('timeline.html'),
+              #includeCSS('style.css'),
+              #includeScript('javascript.js')
             )
           ),
           style = "margin-top:50px;margin-left:10px"
@@ -448,7 +468,6 @@ server <- shinyServer(function(input, output, session){
     #---------------------
     world$time = as.Date( world$time ,format="%Y-%m-%d")
     #world <- world %>% pivot_longer(-c(time,country),names_to = "index",values_to = "data")
-    #world <- world %>% pivot_longer(-c(time,country),names_to = "index",values_to = "data")
     sub_world_data <- subset(world, world$time>=as.Date(input$slider_worldall[1],format="%Y-%m-%d") &  world$time<=as.Date(input$slider_worldall[2],format="%Y-%m-%d")& 
                                #world$index %in%"n_unem" &
                                #world$n_unem <-  input$Group_worldall=="失業率" &
@@ -493,69 +512,115 @@ server <- shinyServer(function(input, output, session){
       layout(title = "<b>各國失業率</b>",xaxis = list(title = "時間以兩個月為一期"),yaxis = list (title = "失業率"),yaxis2 = unem,font=t, margin = m)
   })
   output$Worldoilplot = renderPlotly({
-    plot_ly(sub_world_data(),x=~time,y=~n_oil, color = ~country, colors = "Set2") %>% add_lines()%>% layout(title = "<b>各國油價</b>",
-                                                                                                            xaxis = list(title = "時間以兩個月為一期"),
-                                                                                                            yaxis = list (title = "油價"),font=t, margin = m)
+    plot_ly(sub_world_data(),x=~time,y=~n_oil, color = ~country, colors = "Set2") %>% add_lines()%>%
+      add_trace(x = ~time, y = ~case, mode = "lines", fill = 'tozeroy',yaxis = "y2", name = "確診人數")%>%
+      layout(title = "<b>各國油價</b>",xaxis = list(title = "時間以兩個月為一期"),yaxis = list (title = "油價"),yaxis2 = oil,font=t, margin = m)
   })
   output$Worldcaseplot = renderPlotly({
     plot_ly(sub_world_data(),x=~time,y=~case, color = ~country, colors = "Set2", type = 'scatter', mode = 'lines', fill = 'tozeroy') %>% layout(title = "<b>各國確診人數</b>",
                                                                                                             xaxis = list(title = "時間以兩個月為一期"),
                                                                                                             yaxis = list (title = "確診人數"),font=t, margin = m)
   })
+  #------------------------------
+  # time line
+  #------------------------------
+  selected_data <- reactive({
+    test <- time_data[time_data$start %in% seq(from=min(as.Date(strftime(req(input$slider_worldall[[1]]), "%Y-%m-%d"))),
+                                                 to=max(as.Date(strftime(req(input$slider_worldall[[2]]), "%Y-%m-%d"))), by = 0.02),]
+  })
+
   
+  output$timelineGroups <- renderTimevis({
+    timevis(data = selected_data(), groups = timevisDataGroups, options = list(stack = FALSE))
+  })
   #------------------------------
   # Confirmed
   #------------------------------
   
-  df_confirmed <- read.csv(file = "data/worldMap/time_series_covid_19_confirmed.csv",sep =",")
-  df_confirmed <- df_confirmed %>% rename(Country = "Country.Region") 
+  #df_confirmed <- read.csv(file = "data/worldMap/time_series_covid_19_confirmed.csv",sep =",")
+  #df_confirmed <- df_confirmed %>% rename(Country = "Country.Region") 
   
-  Conf_wide_1 <- read.csv(file = "data/worldMap/Conf_wide1.csv",sep = ",")
+  #Conf_wide_1 <- read.csv(file = "data/worldMap/Conf_wide1.csv",sep = ",")
   
-  df_confirmed <- merge(df_confirmed,Conf_wide_1,by ="Country",all=T )
-  df_confirmed <- df_confirmed %>% filter(Lat != "NA")
+  #df_confirmed <- merge(df_confirmed,Conf_wide_1,by ="Country",all=T )
+  #df_confirmed <- df_confirmed %>% filter(Lat != "NA")
   
-  world <- ggplot() +
-    borders("world", colour = "gray85", fill = "gray80") +
-    theme_map()
+  #world <- ggplot() +
+  #  borders("world", colour = "gray85", fill = "gray80") +
+  #  theme_map()
   
-  data <- filter(df_confirmed,df_confirmed[,ncol(df_confirmed)]>0)
-  Count <- as.integer(unlist(df_confirmed[,ncol(df_confirmed)]))
+  #data <- filter(df_confirmed,df_confirmed[,ncol(df_confirmed)]>0)
+  #Count <- as.integer(unlist(df_confirmed[,ncol(df_confirmed)]))
   
-  map_Conf <- world +
-    geom_point(aes(x = Long, y = Lat, size = Count,name= Country),
-               data = df_confirmed, 
-               colour = 'purple', alpha = .5) +
-    scale_size_continuous(range = c(1,8), 
-                          breaks = c(250, 500, 750, 1000)) +
-    labs(size = 'Cases')
+  #map_Conf <- world +
+  #  geom_point(aes(x = Long, y = Lat, size = Count,name= Country),
+  #             data = df_confirmed, 
+  #             colour = 'purple', alpha = .5) +
+  #  scale_size_continuous(range = c(1,8), 
+  #                        breaks = c(250, 500, 750, 1000)) +
+  #  labs(size = 'Cases')
+  #output$covidConfirmed = renderPlotly({
+  #  ggplotly(map_Conf, tooltip = c('Count','Country'))
+  #})
+  
+  cases_latest_codes <- read.csv(file = "data/worldMap/cases_latest_codes.csv",sep = ",")
+  
+  # light grey boundaries
+  l <- list(color = toRGB("grey"), width = 0.5)
+  
+  # specify map projection/options
+  g <- list(
+    showframe = FALSE,
+    showcoastlines = FALSE,
+    projection = list(type = 'Mercator')
+  )
   output$covidConfirmed = renderPlotly({
-    ggplotly(map_Conf, tooltip = c('Count','Country'))
+    plot_geo(cases_latest_codes) %>% add_trace(
+      z = ~Confirmed, color = ~Confirmed, colors = 'Purples',
+      text = ~Country, locations = ~Code, marker = list(line = l)
+    ) %>% colorbar(title = '確診數') %>% layout(
+      geo = g
+    )
   })
   
   #------------------------------
   # deaths
   #------------------------------
-  df_deaths <- read.csv(file = "data/worldMap/time_series_covid_19_deaths.csv",sep =",")
-  df_deaths <- df_deaths %>% 
-    rename(Country = "Country.Region") 
-  Conf_wide_2 <- read.csv(file = "data/worldMap/Conf_wide2.csv",sep = ",")
+  #df_deaths <- read.csv(file = "data/worldMap/time_series_covid_19_deaths.csv",sep =",")
+  #df_deaths <- df_deaths %>% 
+  #  rename(Country = "Country.Region") 
+  #Conf_wide_2 <- read.csv(file = "data/worldMap/Conf_wide2.csv",sep = ",")
   
-  df_deaths <- merge(df_deaths,Conf_wide_2,by ="Country",all=T )
-  df_deaths <- df_deaths %>% filter(Lat != "NA")
+  #df_deaths <- merge(df_deaths,Conf_wide_2,by ="Country",all=T )
+  #df_deaths <- df_deaths %>% filter(Lat != "NA")
   
-  data <- filter(df_deaths,df_deaths[,ncol(df_deaths)]>0)
-  Countdeath <- as.integer(unlist(data[,ncol(df_deaths)]))
+  #data <- filter(df_deaths,df_deaths[,ncol(df_deaths)]>0)
+  #Countdeath <- as.integer(unlist(data[,ncol(df_deaths)]))
   
-  map_death <- world +
-    geom_point(aes(x = Long, y = Lat, size = Countdeath, name= Country),
-               data = data, 
-               colour = 'red', alpha = .5) +
-    scale_size_continuous(range = c(1, 8), 
-                          breaks = c(250, 500, 750, 1000)) +
-    labs(size = 'Cases')
+  #map_death <- world +
+  #  geom_point(aes(x = Long, y = Lat, size = Countdeath, name= Country),
+  #             data = data, 
+  #             colour = 'red', alpha = .5) +
+  #  scale_size_continuous(range = c(1, 8), 
+  #                        breaks = c(250, 500, 750, 1000)) +
+  #  labs(size = 'Cases')
+  #output$covidDeaths = renderPlotly({
+  #  ggplotly(map_death, tooltip = c('Countdeath','country'))
+  #})
+  # specify map projection/options
+  g <- list(
+    showframe = FALSE,
+    showcoastlines = FALSE,
+    projection = list(type = 'Mercator')
+  )
+  
   output$covidDeaths = renderPlotly({
-    ggplotly(map_death, tooltip = c('Countdeath','country'))
+    plot_geo(cases_latest_codes) %>% add_trace(
+      z = ~Deaths, color = ~Deaths, colors = 'Reds',
+      text = ~Country, locations = ~Code, marker = list(line = l)
+    ) %>% colorbar(title = '死亡數') %>% layout(
+      geo = g
+    )
   })
   
 })
