@@ -20,7 +20,7 @@ img_urls <- paste0(
   countries, '.svg'
 )
 data_directory = "data/"
-timeLine = read.csv( file.path(data_directory, "event.csv"), stringsAsFactors = F)
+timeLine = read.csv( file.path(data_directory, "event.csv"), stringsAsFactors = F, fileEncoding ="UTF-8")
 timeLine <- timeLine %>% pivot_longer(-c(time),names_to = "group",values_to = "content")
 timeLine$time = as.Date( timeLine$time ,format="%Y-%m-%d")
 time_data <- data.frame(
