@@ -22,8 +22,7 @@ img_urls <- paste0(
 data_directory = "data/"
 timeLine = read.csv( file.path(data_directory, "event.csv"), stringsAsFactors = F)
 timeLine <- timeLine %>% pivot_longer(-c(time),names_to = "group",values_to = "content")
-#timeLine$time = as.Date( timeLine$time ,format="%Y-%m-%d")
-timeLine$time = ymd(timeLine$time)  
+timeLine$time = as.Date( timeLine$time ,format="%Y-%m-%d")
 time_data <- data.frame(
   id      = 1:531,
   content = timeLine$content,
@@ -505,16 +504,16 @@ server <- shinyServer(function(input, output, session){
   })
   #plot_ly()%>%
   #  add_trace(data = stock, type = 'scatter', mode = 'lines', fill = 'tozeroy', x = ~date, y = ~GOOG, name = 'GOOG')
-  
+  case <- list(overlaying = "y",side = "right",title = "<b>確診人數</b>")
   output$WorldUnemplot = renderPlotly({
     plot_ly(sub_world_data(),x=~time,y=~n_unem, color = ~country, colors = "Set2") %>% add_lines()%>%
-      add_trace(x = ~time, y = ~case, mode = "lines", fill = 'tozeroy',yaxis = "y2", name = "確診人數")%>% 
-      layout(title = "<b>各國失業率</b>",xaxis = list(title = "時間以兩個月為一期"),yaxis = list (title = "失業率"),yaxis2 = unem,font=t, margin = m)
+      add_trace(x = ~time, y = ~case,type="scatter", mode = "lines", fill = 'tozeroy',yaxis = "y2", name = "確診人數")%>% 
+      layout(title = "<b>各國失業率</b>",xaxis = list(title = "時間以兩個月為一期"),yaxis = list (title = "失業率"),yaxis2 = case,font=t, margin = m)
   })
   output$Worldoilplot = renderPlotly({
     plot_ly(sub_world_data(),x=~time,y=~n_oil, color = ~country, colors = "Set2") %>% add_lines()%>%
-      add_trace(x = ~time, y = ~case, mode = "lines", fill = 'tozeroy',yaxis = "y2", name = "確診人數")%>%
-      layout(title = "<b>各國油價</b>",xaxis = list(title = "時間以兩個月為一期"),yaxis = list (title = "油價"),yaxis2 = oil,font=t, margin = m)
+      add_trace(x = ~time, y = ~case,type="scatter", mode = "lines", fill = 'tozeroy',yaxis = "y2", name = "確診人數")%>%
+      layout(title = "<b>各國油價</b>",xaxis = list(title = "時間以兩個月為一期"),yaxis = list (title = "油價"),yaxis2 = case,font=t, margin = m)
   })
   output$Worldcaseplot = renderPlotly({
     plot_ly(sub_world_data(),x=~time,y=~case, color = ~country, colors = "Set2", type = 'scatter', mode = 'lines', fill = 'tozeroy') %>% layout(title = "<b>各國確診人數</b>",
