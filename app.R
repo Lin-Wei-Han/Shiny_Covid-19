@@ -13,6 +13,7 @@ library(shinyjs)
 library(shinycssloaders)
 library(timevis)
 library(lubridate)
+library(DT)
 
 countries <- c('tw','gb','us')
 img_urls <- paste0(
@@ -57,7 +58,6 @@ y4 <- list(
 
 ui <- dashboardPage(
   skin = "red",
-  
   # Header
   dashboardHeader(title = "Covid19 Dashboard"),
   # Sidebar
@@ -281,20 +281,23 @@ ui <- dashboardPage(
                   #),
                   p("指標（與銷售額比較）:",style = "font-weight:600"),
                   awesomeCheckbox(
-                    inputId = "growth",label = "銷售額年增率",status = "danger"
+                    inputId = "growth",label = "銷售額年增率",status = "danger",value = TRUE
                   ),
                   awesomeCheckbox(
                     inputId = "unem",label = "失業率",status = "danger"
                   ),
                   awesomeCheckbox(
                     inputId = "ios",label = "油價",status = "danger"
+                  ),
+                  p("敘述性統計:",style = "font-weight:600"),
+                  materialSwitch(inputId = "stat",value = TRUE,status = "danger"
                   )
                 ),
                 mainPanel(
                   hidden(plotlyOutput(outputId = "TaiwanAllplot_growth", height = "500px")),
                   hidden(plotlyOutput(outputId = "TaiwanAllplot_n_unem", height = "500px")),
                   hidden(plotlyOutput(outputId = "TaiwanAllplot_oil", height = "500px")),
-                  #tableOutput("values"),
+                  dataTableOutput(outputId = "TaiwanAll_stat"),
                   #verbatimTextOutput("summary"),
                   style = "
                         padding-right:50px;
@@ -304,43 +307,39 @@ ui <- dashboardPage(
             ),
             tabPanel(
               "各國指標",
-              sidebarLayout(
-                sidebarPanel(
-                  sliderInput("slider_worldall", "時間:",
-                              min = as.Date("2017-01-01"), max = as.Date("2021-11-01"), value = c(as.Date("2018-11-01"), as.Date("2020-11-01")),
-                              timeFormat = "%Y/%m"
-                  ),
-                  p("指標:",style = "font-weight:600"),
-                  awesomeCheckbox(
-                    inputId = "unemw",label = "失業率",status = "danger",value = TRUE
-                  ),
-                  awesomeCheckbox(
-                    inputId = "iosw",label = "油價",status = "danger"
-                  ),
-                  awesomeCheckbox(
-                    inputId = "case",label = "確診人數",status = "danger"
-                  ),
-                  multiInput(
-                    inputId = "Group_worldcountry", label = "國家 :", choices = NULL,selected = "tw",
-                    choiceNames = lapply(
-                      seq_along(countries),
-                      function(i) {
-                        tagList(
-                          tags$img(src = img_urls[i], width = 50, height = 30),
-                          
-                        )
-                      }
+                fluidRow(
+                  column(sliderInput("slider_worldall", "時間:",
+                                     min = as.Date("2017-01-01"), max = as.Date("2021-11-01"), value = c(as.Date("2018-11-01"), as.Date("2020-11-01")),
+                                     timeFormat = "%Y/%m",width=500
+                  ),width=4),
+                  column(
+                    p("指標:",style = "font-weight:600"),
+                    awesomeCheckbox(
+                      inputId = "unemw",label = "失業率",status = "danger",value = TRUE
                     ),
-                    choiceValues = countries
-                  )
+                    awesomeCheckbox(
+                      inputId = "iosw",label = "油價",status = "danger"
+                    ),width=1),
+                  column(
+                    multiInput(
+                      inputId = "Group_worldcountry", label = "國家 :", choices = NULL,selected = "tw",
+                      choiceNames = lapply(
+                        seq_along(countries),
+                        function(i) {
+                          tagList(
+                            tags$img(src = img_urls[i], width = 30, height = 20),
+                            
+                          )
+                        }
+                      ),
+                      choiceValues = countries
+                    ),width=7)
                 ),
-                mainPanel(
+              fluidRow(
                   hidden(plotlyOutput(outputId = "WorldUnemplot", height = "500px")),
                   hidden(plotlyOutput(outputId = "Worldoilplot", height = "500px")),
-                  hidden(plotlyOutput(outputId = "Worldcaseplot", height = "500px")),
                   style = "padding-right:50px;"
-                )
-              ),
+                ),
               timevisOutput("timelineGroups"),
               #includeHTML('timeline.html'),
               #includeCSS('style.css'),
@@ -378,16 +377,16 @@ server <- shinyServer(function(input, output, session){
                                TaiwanSaleIndustry$city == input$areataiwan_sale_industry)
     
   })
-  output$values_AreaSale <- renderTable({
-    TaiwanSaleArea()
-  })
-  output$summary_AreaSale <- renderPrint({  
-    input$tw_sale_industry
+  
+  observe({
+    if (input$slider_taiwan_sale_industry[1] == input$slider_taiwan_sale_industry[2]){
+      updateSliderInput(session = session, "slider_taiwan_sale_industry", value = c(input$slider_taiwan_sale_industry[1], input$slider_taiwan_sale_industry[1] %m+% months(3)),timeFormat = "%Y/%m")
+    }     
   })
   
   output$TaiwanSaleplot = renderPlotly({
     plot_ly(TaiwanSaleArea(),x=~time,y=~total, color = ~industry ,colors = "Set2") %>% add_lines()%>% layout(xaxis = list(title = "時間以兩個月為一期"),
-                                                                                                             yaxis = list (title = "銷售額"),font=t, margin = m)
+                                                                                                             yaxis = list (title = "銷售額（新台幣/元）"),font=t, margin = m)
     #ggplot(TaiwanSaleArea(), aes(x=time, y = total, colour =industry ,group = industry,shape=industry)) + 
     #  geom_line(size = 2)
   })
@@ -398,40 +397,58 @@ server <- shinyServer(function(input, output, session){
   sub_data <- reactive({
     data_directory = "data/"
     taiwan =  read.csv( file.path(data_directory, "tw_output.csv"), stringsAsFactors = F)
-    #---------------------
+    #-------時間轉換--------
     taiwan$time = as.Date( taiwan$time ,format="%Y-%m-%d")
-    #taiwan <- taiwan %>% pivot_longer(-time,names_to = "index",values_to = "data")
     sub_data <- subset(taiwan, taiwan$time>=as.Date(input$slider_taiwanall[1],format="%Y-%m-%d") &  taiwan$time<=as.Date(input$slider_taiwanall[2],format="%Y-%m-%d"))
     
   })
-  
-  output$values <- renderTable({
-    sub_data()
+  #-------避免時間複選--------
+  observe({
+    if (input$slider_taiwanall[1] == input$slider_taiwanall[2]){
+      updateSliderInput(session = session, "slider_taiwanall", value = c(input$slider_taiwanall[1], input$slider_taiwanall[1] %m+% months(3)),timeFormat = "%Y/%m")
+    }     
   })
-  output$summary <- renderPrint({  
-    input$oil
-  })
-  
-  growth <- list(overlaying = "y",side = "right",title = "<b>銷售額年增率</b>")
-  unem <- list(overlaying = "y",side = "right",title = "<b>失業率</b>")
-  oil <- list(overlaying = "y",side = "right",title = "<b>油價</b>")
+  #-------Y軸進階參數設定--------
+  growth <- list(overlaying = "y",side = "right",title = "<b>銷售額年增率（%）</b>")
+  unem <- list(overlaying = "y",side = "right",title = "<b>失業率（%）</b>")
+  oil <- list(overlaying = "y",side = "right",title = "<b>油價（公升/元）</b>")
   m <- list(l = 50,r = 50,b = 50,t = 50,pad = 4)
-  
+  #-------繪圖--------
   output$TaiwanAllplot_growth = renderPlotly({
     plot_ly(sub_data(), x = ~time, y = ~total,name = "銷售額") %>% add_lines %>%
       add_lines(x = ~time, y = ~growth, mode = "lines",yaxis = "y2", name = "銷售額年增率")%>%
-      layout(title = "<b>銷售額與銷售額年增率</b>",xaxis = list(title="時間以兩個月為一期"),yaxis = list(title="銷售額"),yaxis2 = growth,font=t, margin = m)
+      layout(title = "<b>銷售額與銷售額年增率</b>",legend = list(orientation = 'h'),xaxis = list(title="時間以兩個月為一期"),yaxis = list(title="銷售額（新台幣/元）"),yaxis2 = growth,font=t, margin = m)
   })
   output$TaiwanAllplot_n_unem = renderPlotly({
     plot_ly(sub_data(), x = ~time, y = ~total,name = "銷售額") %>% add_lines %>%
       add_lines(x = ~time, y = ~n_unem, mode = "lines",yaxis = "y2", name = "失業率")%>%
-      layout(title = "<b>銷售額與失業率</b>",xaxis = list(title="時間以兩個月為一期"),yaxis = list(title="銷售額"),yaxis2 = unem,font=t, margin = m)
+      layout(title = "<b>銷售額與失業率</b>",legend = list(orientation = 'h'),xaxis = list(title="時間以兩個月為一期"),yaxis = list(title="銷售額（新台幣/元）"),yaxis2 = unem,font=t, margin = m)
   })
   output$TaiwanAllplot_oil = renderPlotly({
     plot_ly(sub_data(), x = ~time, y = ~total,name = "銷售額") %>% add_lines %>%
       add_lines(x = ~time, y = ~n_oil, mode = "lines",yaxis = "y2", name = "油價")%>%
-      layout(title = "<b>銷售額與油價</b>",xaxis = list(title="時間以兩個月為一期"),yaxis = list(title="銷售額"),yaxis2 = oil,font=t, margin = m)
+      layout(title = "<b>銷售額與油價</b>",legend = list(orientation = 'h'),xaxis = list(title="時間以兩個月為一期"),yaxis = list(title="銷售額（新台幣/元）"),yaxis2 = oil,font=t, margin = m)
   })
+  #-------敘述性統計--------
+  #data_directory = "data/"
+  #data =  read.csv( file.path(data_directory, "tw_output.csv"), stringsAsFactors = F)
+  
+  #summary statistics
+  sub_stat <- reactive({
+    data_directory = "data/"
+    taiwan =  read.csv( file.path(data_directory, "tw_output.csv"), stringsAsFactors = F)
+    #-------時間轉換--------
+    taiwan$time = as.Date( taiwan$time ,format="%Y-%m-%d")
+    taiwan <- subset(taiwan, taiwan$time>=as.Date(input$slider_taiwanall[1],format="%Y-%m-%d") &  taiwan$time<=as.Date(input$slider_taiwanall[2],format="%Y-%m-%d"))
+    ind <- sapply(taiwan, is.numeric)
+    sub_stat <- round(cor(taiwan[, ind]),digits = 2 )
+  })
+  output$TaiwanAll_stat <- renderDataTable({
+    datatable(sub_stat(),filter='none', options = list(ordering = FALSE, autoWidth = TRUE,paging = FALSE,searching = FALSE
+    ))
+  })
+  
+  #-------選取事件判斷--------
   observeEvent(input$growth, {
     if(input$growth == TRUE){
       showElement("TaiwanAllplot_growth")
@@ -453,25 +470,37 @@ server <- shinyServer(function(input, output, session){
       hideElement("TaiwanAllplot_oil")
     }
   })
-
+  observeEvent(input$stat, {
+    if(input$stat == TRUE){
+      showElement("TaiwanAll_stat")
+    }else{
+      hideElement("TaiwanAll_stat")
+    }
+  })
+  
   #---------------------------------------------------
   #--------------------World_All---------------------
   #---------------------------------------------------
-  #setwd("C:/tsdc/5th/Output")
   sub_world_data <- reactive({
     data_directory = "data/"
     world = read.csv( file.path(data_directory, "world_covid.csv"), stringsAsFactors = F)
-    #world$time = as.Date(paste(world$time,"/01",sep = ""),"%Y/%m/%d")
-    #data_directory = "data/"
-    #world =  read.csv( file.path(data_directory, "uk_all.csv"), stringsAsFactors = F)
-    #---------------------
+    #-------時間轉換--------
     world$time = as.Date( world$time ,format="%Y-%m-%d")
-    #world <- world %>% pivot_longer(-c(time,country),names_to = "index",values_to = "data")
+    #----Max min scaler-----
+    minmax_tra <- function(x, na.rm = TRUE) {
+      return((x- min(x)) /(max(x)-min(x)))
+    }
+    world$case <- minmax_tra(world$case)
+    
     sub_world_data <- subset(world, world$time>=as.Date(input$slider_worldall[1],format="%Y-%m-%d") &  world$time<=as.Date(input$slider_worldall[2],format="%Y-%m-%d")& 
-                               #world$index %in%"n_unem" &
-                               #world$n_unem <-  input$Group_worldall=="失業率" &
-                               #world$n_oil <-  input$Group_worldall=="油價" &
-                               world$country %in% input$Group_worldcountry)
+                               world$country %in% input$Group_worldcountry)%>%
+      mutate(country = recode(country, 'tw'='台灣', 'us'='美國', 'gb'='英國') )
+  })
+  
+  observe({
+    if (input$slider_worldall[1] == input$slider_worldall[2]){
+      updateSliderInput(session = session, "slider_worldall", value = c(input$slider_worldall[1], input$slider_worldall[1] %m+% months(3)),timeFormat = "%Y/%m")
+    }     
   })
   
   output$WorldAll_values <- renderTable({
@@ -481,6 +510,7 @@ server <- shinyServer(function(input, output, session){
     input$Group_worldcountry
   })
   
+  #-------選取事件判斷--------
   observeEvent(input$unemw, {
     if(input$unemw == TRUE){
       showElement("WorldUnemplot")
@@ -502,24 +532,30 @@ server <- shinyServer(function(input, output, session){
       hideElement("Worldcaseplot")
     }
   })
+  fixed_pal <- reactive({
+    
+    pal = c("#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", "#FFD92F", "#E5C494", "#B3B3B3") 
+    names(pal) = c('台灣', '美國', '英國')
+    Group_worldcountry_chinese = recode(input$Group_worldcountry, 'tw'='台灣', 'us'='美國', 'gb'='英國') 
+    
+    fixed_pal = pal[Group_worldcountry_chinese]
+    
+  })
   #plot_ly()%>%
   #  add_trace(data = stock, type = 'scatter', mode = 'lines', fill = 'tozeroy', x = ~date, y = ~GOOG, name = 'GOOG')
   case <- list(overlaying = "y",side = "right",title = "<b>確診人數</b>")
+  
   output$WorldUnemplot = renderPlotly({
-    plot_ly(sub_world_data(),x=~time,y=~n_unem, color = ~country, colors = "Set2") %>% add_lines()%>%
+    plot_ly(sub_world_data(),x=~time,y=~n_unem, color = ~country, colors = fixed_pal()) %>% add_lines()%>%
       add_trace(x = ~time, y = ~case,type="scatter", mode = "lines", fill = 'tozeroy',yaxis = "y2", name = "確診人數")%>% 
-      layout(title = "<b>各國失業率</b>",xaxis = list(title = "時間以兩個月為一期"),yaxis = list (title = "失業率"),yaxis2 = case,font=t, margin = m)
+      layout(title = "<b>各國失業率</b>",legend = list(x = 0.01, y = 1),xaxis = list(title = "時間以兩個月為一期"),yaxis = list (title = "失業率（%）"),yaxis2 = case,font=t, margin = m)
   })
   output$Worldoilplot = renderPlotly({
-    plot_ly(sub_world_data(),x=~time,y=~n_oil, color = ~country, colors = "Set2") %>% add_lines()%>%
+    plot_ly(sub_world_data(),x=~time,y=~n_oil, color = ~country, colors = fixed_pal()) %>% add_lines()%>%
       add_trace(x = ~time, y = ~case,type="scatter", mode = "lines", fill = 'tozeroy',yaxis = "y2", name = "確診人數")%>%
-      layout(title = "<b>各國油價</b>",xaxis = list(title = "時間以兩個月為一期"),yaxis = list (title = "油價"),yaxis2 = case,font=t, margin = m)
+      layout(title = "<b>各國油價</b>",legend = list(x = 0.01, y = 1),xaxis = list(title = "時間以兩個月為一期"),yaxis = list (title = "油價（桶/元）"),yaxis2 = case,font=t, margin = m)
   })
-  output$Worldcaseplot = renderPlotly({
-    plot_ly(sub_world_data(),x=~time,y=~case, color = ~country, colors = "Set2", type = 'scatter', mode = 'lines', fill = 'tozeroy') %>% layout(title = "<b>各國確診人數</b>",
-                                                                                                            xaxis = list(title = "時間以兩個月為一期"),
-                                                                                                            yaxis = list (title = "確診人數"),font=t, margin = m)
-  })
+
   #------------------------------
   # time line
   #------------------------------
