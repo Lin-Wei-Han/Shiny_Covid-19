@@ -84,6 +84,7 @@ ui <- dashboardPage(
   # body
   dashboardBody(
     useShinyjs(),
+    fluidPage(list(tags$head(HTML('<link rel="icon", href="coronavirus.png"/>')))),
     tags$style(HTML("
                      .main-header {height:20px}
                      .main-sidebar {
