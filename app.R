@@ -14,6 +14,7 @@ library(shinycssloaders)
 library(timevis)
 library(lubridate)
 library(DT)
+library(tidyverse)
 
 countries <- c('tw','gb','us')
 img_urls <- paste0(
@@ -23,6 +24,7 @@ img_urls <- paste0(
 data_directory = "data/"
 timeLine = read.csv( file.path(data_directory, "event.csv"), stringsAsFactors = F, fileEncoding ="UTF-8")
 timeLine <- timeLine %>% pivot_longer(-c(time),names_to = "group",values_to = "content")
+timeLine$group <- recode(timeLine$group, 'tw_event' = "台灣", 'us_event' = "美國", 'gb_event' = "英國")
 timeLine$time = as.Date( timeLine$time ,format="%Y-%m-%d")
 time_data <- data.frame(
   id      = 1:531,
@@ -572,51 +574,159 @@ server <- shinyServer(function(input, output, session){
   #------------------------------
   # Confirmed
   #------------------------------
+  #---df_confirmed資料---#
+  df_confirmed <- read.csv(file = "data/worldMap/time_series_covid_19_confirmed.csv",sep =",")
+  df_confirmed <- df_confirmed %>% rename(Country = "Country.Region") 
   
-  #df_confirmed <- read.csv(file = "data/worldMap/time_series_covid_19_confirmed.csv",sep =",")
-  #df_confirmed <- df_confirmed %>% rename(Country = "Country.Region") 
+  Conf_wide_1 <- read.csv(file = "data/worldMap/Conf_wide1.csv",sep = ",")
   
-  #Conf_wide_1 <- read.csv(file = "data/worldMap/Conf_wide1.csv",sep = ",")
+  df_confirmed <- merge(df_confirmed,Conf_wide_1,by ="Country",all=T )
+  df_confirmed <- df_confirmed %>% filter(Lat != "NA")
+  #---df_deaths資料---#
+  df_deaths <- read.csv(file = "data/worldMap/time_series_covid_19_deaths.csv",sep =",")
+  df_deaths <- df_deaths %>% 
+    rename(Country = "Country.Region") 
+  Conf_wide_2 <- read.csv(file = "data/worldMap/Conf_wide2.csv",sep = ",")
   
-  #df_confirmed <- merge(df_confirmed,Conf_wide_1,by ="Country",all=T )
-  #df_confirmed <- df_confirmed %>% filter(Lat != "NA")
+  df_deaths <- merge(df_deaths,Conf_wide_2,by ="Country",all=T )
+  df_deaths <- df_deaths %>% filter(Lat != "NA")
   
-  #world <- ggplot() +
-  #  borders("world", colour = "gray85", fill = "gray80") +
-  #  theme_map()
+  codes <- read_csv('https://raw.githubusercontent.com/plotly/datasets/master/2014_world_gdp_with_codes.csv',
+                    col_types = cols(
+                      COUNTRY = col_character(),
+                      `GDP (BILLIONS)` = col_double(),
+                      CODE = col_character()
+                    ))
+  #---資料清理---#
+  df_confirmed <- df_confirmed %>%
+    pivot_longer( -c("Province.State", "Country", "Lat", "Long"),names_to = "Date",values_to = "Confirmed") 
+  df_confirmed$Date <-  gsub("X","",df_confirmed$Date)
+  df_confirmed <- separate(df_confirmed,Date,c("year","month","day")) 
+  df_confirmed$year <-  as.integer(df_confirmed$year) 
+  df_confirmed$month <-  as.integer(df_confirmed$month) 
+  df_confirmed$day <-  as.integer(df_confirmed$day) 
+  df_confirmed <- df_confirmed %>%  
+    mutate(Date = make_datetime(year, month, day)) %>%
+    select(-year,-month,-day)
   
-  #data <- filter(df_confirmed,df_confirmed[,ncol(df_confirmed)]>0)
-  #Count <- as.integer(unlist(df_confirmed[,ncol(df_confirmed)]))
+  df_deaths <- df_deaths %>%
+    pivot_longer( -c("Province.State", "Country", "Lat", "Long"),names_to = "Date",values_to = "Deaths") 
+  df_deaths$Date <-  gsub("X","",df_deaths$Date)
+  df_deaths <- separate(df_deaths,Date,c("year","month","day")) 
+  df_deaths$year <-  as.integer(df_deaths$year) 
+  df_deaths$month <-  as.integer(df_deaths$month) 
+  df_deaths$day <-  as.integer(df_deaths$day) 
+  df_deaths <- df_deaths %>%  
+    mutate(Date = make_datetime(year, month, day)) %>%
+    select(-year,-month,-day)
   
-  #map_Conf <- world +
-  #  geom_point(aes(x = Long, y = Lat, size = Count,name= Country),
-  #             data = df_confirmed, 
-  #             colour = 'purple', alpha = .5) +
-  #  scale_size_continuous(range = c(1,8), 
-  #                        breaks = c(250, 500, 750, 1000)) +
-  #  labs(size = 'Cases')
-  #output$covidConfirmed = renderPlotly({
-  #  ggplotly(map_Conf, tooltip = c('Count','Country'))
-  #})
+  #---total---#
+  df_total <- df_confirmed %>%
+    left_join(df_deaths) 
   
-  cases_latest_codes <- read.csv(file = "data/worldMap/cases_latest_codes.csv",sep = ",")
+  ## We all know "Diamond Princess" and "MS Zaandam" are cruises, So we have to remove them from the data
   
-  # light grey boundaries
-  l <- list(color = toRGB("grey"), width = 0.5)
+  df_total <- df_total %>%
+    filter(Country != "Diamond Princess") %>%
+    filter(Country != "MS Zaandam")
   
-  # specify map projection/options
-  g <- list(
+  df_total$Deaths[is.na(df_total$Deaths)] <- 0
+  
+  ## Created a dataset including latest news of COVID-19
+  
+  cases_latest <- df_total %>%
+    group_by(Country, Date) %>%
+    summarise(Confirmed  = sum(Confirmed),
+              Deaths = sum(Deaths)) %>%
+    mutate("New Cases" = Confirmed - lag(Confirmed, 1) ) %>%
+    filter(!is.na(Date)) %>%
+    filter(Date == max(Date))
+  
+  day_latest <- max(cases_latest$Date)
+  cases_total_date <- df_total %>%
+    group_by(Date) %>%
+    summarise(Confirmed = sum(Confirmed),
+              Deaths = sum(Deaths)) %>%
+    mutate("New_Cases" = Confirmed - lag(Confirmed, 1))
+  
+  cases_total_date$New_Cases[is.na(cases_total_date$New_Cases)] <- 0 
+  
+  cases_total_latest <- cases_total_date %>%
+    filter(Date == max(Date))
+  codes <- codes %>%
+    select(COUNTRY, CODE) %>%
+    rename(Region = COUNTRY ,
+           Code = CODE) %>%
+    rownames_to_column("id")
+  
+  codes$id <- as.integer(codes$id)
+  
+  ## Making sure countries's and regions' names are in line with other datasets.
+  
+  codes$Region <- codes$Region %>%
+    str_replace(pattern = "United States", replacement = "US") %>%
+    str_replace(pattern = "Macedonia", replacement = "North Macedonia") %>%
+    str_replace(pattern = "Czech Republic", replacement = "Czechia") %>%
+    str_replace(pattern = "Taiwan", replacement = "Taiwan*") %>%
+    str_replace(pattern = "West Bank", replacement = "West Bank and Gaza") %>%
+    str_replace(pattern = "Congo, Democratic Republic of the", replacement = "Congo (Kinshasa)") %>%
+    str_replace(pattern = "Congo, Republic of the", replacement = "Congo (Brazzaville)") %>%
+    str_replace(pattern = "Bahamas, The", replacement = "Bahamas") %>%
+    str_replace(pattern = "Swaziland", replacement = "Eswatini") %>%
+    str_replace(pattern = "Gambia, The", replacement = "Gambia")
+  
+  cases_latest_codes <- cases_latest %>%
+    left_join(codes, by = c("Country" = "Region" )) %>%
+    arrange(desc(Confirmed))
+  
+  ## Setting boundries' color as light grey
+  
+  line <- list(color = toRGB("#d1d1d1"), width = 0.2)
+  
+  ## Specifing parameters of the 3D map
+  geo <- list(
     showframe = FALSE,
     showcoastlines = FALSE,
-    projection = list(type = 'Mercator')
-  )
+    projection = list(type = 'orthographic'),
+    resolution = '100',
+    showcountries = TRUE,
+    countrycolor = '#d1d1d1',
+    showocean = TRUE,
+    oceancolor = '#064273',
+    showlakes = TRUE,
+    lakecolor = '#99c0db',
+    showrivers = TRUE,
+    rivercolor = '#99c0db',
+    bgcolor = '#e8f7fc')
+  
+  #cases_latest_codes <- read.csv(file = "data/worldMap/cases_latest_codes.csv",sep = ",")
+  
+  # light grey boundaries
+  #l <- list(color = toRGB("grey"), width = 0.5)
+  
+  # specify map projection/options
+  #g <- list(
+  #  showframe = FALSE,
+  #  showcoastlines = FALSE,
+  #  projection = list(type = 'Mercator')
+  #)
   output$covidConfirmed = renderPlotly({
-    plot_geo(cases_latest_codes) %>% add_trace(
-      z = ~Confirmed, color = ~Confirmed, colors = 'Purples',
-      text = ~Country, locations = ~Code, marker = list(line = l)
-    ) %>% colorbar(title = '確診數') %>% layout(
-      geo = g
-    )
+    #plot_geo(cases_latest_codes) %>% add_trace(
+    #  z = ~Confirmed, color = ~Confirmed, colors = 'Purples',
+    #  text = ~Country, locations = ~Code, marker = list(line = l)
+    #) %>% colorbar(title = '確診數') %>% layout(
+    #  geo = g
+    #)
+    plot_geo() %>%
+      layout(geo = geo,
+             paper_bgcolor = '#e8f7fc',
+             title = paste0("World COVID-19 Confirmed by Region at", day_latest)) %>%
+      add_trace(data = cases_latest_codes,
+                z = ~Confirmed,
+                colors = "Reds",
+                text = ~'Country',
+                locations = ~Code,
+                marker = list(line = line))
   })
   
   #------------------------------
@@ -630,20 +740,6 @@ server <- shinyServer(function(input, output, session){
   #df_deaths <- merge(df_deaths,Conf_wide_2,by ="Country",all=T )
   #df_deaths <- df_deaths %>% filter(Lat != "NA")
   
-  #data <- filter(df_deaths,df_deaths[,ncol(df_deaths)]>0)
-  #Countdeath <- as.integer(unlist(data[,ncol(df_deaths)]))
-  
-  #map_death <- world +
-  #  geom_point(aes(x = Long, y = Lat, size = Countdeath, name= Country),
-  #             data = data, 
-  #             colour = 'red', alpha = .5) +
-  #  scale_size_continuous(range = c(1, 8), 
-  #                        breaks = c(250, 500, 750, 1000)) +
-  #  labs(size = 'Cases')
-  #output$covidDeaths = renderPlotly({
-  #  ggplotly(map_death, tooltip = c('Countdeath','country'))
-  #})
-  # specify map projection/options
   g <- list(
     showframe = FALSE,
     showcoastlines = FALSE,
@@ -651,12 +747,22 @@ server <- shinyServer(function(input, output, session){
   )
   
   output$covidDeaths = renderPlotly({
-    plot_geo(cases_latest_codes) %>% add_trace(
-      z = ~Deaths, color = ~Deaths, colors = 'Reds',
-      text = ~Country, locations = ~Code, marker = list(line = l)
-    ) %>% colorbar(title = '死亡數') %>% layout(
-      geo = g
-    )
+    #plot_geo(cases_latest_codes) %>% add_trace(
+    #  z = ~Deaths, color = ~Deaths, colors = 'Reds',
+    #  text = ~Country, locations = ~Code, marker = list(line = l)
+    #) %>% colorbar(title = '死亡數') %>% layout(
+    #  geo = g
+    #)
+    plot_geo() %>%
+      layout(geo = geo,
+             paper_bgcolor = '#e8f7fc',
+             title = paste0("World COVID-19 Deaths by Region at", day_latest)) %>%
+      add_trace(data = cases_latest_codes,
+                z = ~Deaths,
+                colors = "Reds",
+                text = ~'Country',
+                locations = ~Code,
+                marker = list(line = line))
   })
   
 })
