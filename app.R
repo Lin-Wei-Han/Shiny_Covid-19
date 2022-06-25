@@ -116,10 +116,10 @@ ui <- dashboardPage(
             # The id lets us use input$tabset1 on the server to find the current tab
             id = "tabset1", height = "300px",
             tabPanel("確診人數",
-                     plotlyOutput(outputId = "covidConfirmed", height = "800px")%>% withSpinner(color="#dd4b39")
+                     plotlyOutput(outputId = "covidConfirmed", height = "850px")%>% withSpinner(color="#dd4b39")
             ),
             tabPanel("死亡人數", 
-                     plotlyOutput(outputId = "covidDeaths", height = "800px")%>% withSpinner(color="#dd4b39")
+                     plotlyOutput(outputId = "covidDeaths", height = "850px")%>% withSpinner(color="#dd4b39")
             )
           )
           
