@@ -58,6 +58,11 @@ y4 <- list(
   anchor="free",
   position=-1)
 
+my.summary <- function(x, na.rm=TRUE){
+  result <- c("平均數"=mean(x, na.rm=na.rm),
+              "標準差"=sd(x, na.rm=na.rm))
+}
+
 ui <- dashboardPage(
   skin = "red",
   # Header
@@ -249,12 +254,6 @@ ui <- dashboardPage(
           ),
           mainPanel(
             plotlyOutput(outputId = "TaiwanSaleplot", height = "500px")%>% withSpinner(color="#dd4b39"),
-            #hidden(box(id = "warning",
-            #  width = 12,height = 500, background = "yellow",
-            #  "A box with a solid black background",style = "font-size:40px;text-align: center;padding-top:230px"
-            #)),
-            #tableOutput("values_AreaSale"),
-            #verbatimTextOutput("summary_AreaSale"),
             style = "padding-right:50px;"
           )
         )
@@ -278,10 +277,6 @@ ui <- dashboardPage(
                               min = as.Date("2017-01-01"), max = as.Date("2021-11-01"), value = c(as.Date("2018-11-01"), as.Date("2020-11-01")),
                               timeFormat = "%Y/%m"
                   ),
-                  #awesomeCheckboxGroup(
-                  #  inputId = "Group_taiwanall", label = "指標（與銷售額比較）：", choices = c("銷售額年增率" = "growth", "失業率" = "n_unem", "油價" = "n_oil"),
-                  #  selected = "total", status = "danger"
-                  #),
                   p("指標（與銷售額比較）:",style = "font-weight:600"),
                   awesomeCheckbox(
                     inputId = "growth",label = "銷售額年增率",status = "danger",value = TRUE
@@ -294,13 +289,16 @@ ui <- dashboardPage(
                   ),
                   p("敘述性統計:",style = "font-weight:600"),
                   materialSwitch(inputId = "stat",value = TRUE,status = "danger"
-                  )
+                  ),
+                  dataTableOutput(outputId = "TaiwanAll_statMean"),
+                  dataTableOutput(outputId = "TaiwanAll_stat"),
                 ),
                 mainPanel(
                   hidden(plotlyOutput(outputId = "TaiwanAllplot_growth", height = "500px")),
                   hidden(plotlyOutput(outputId = "TaiwanAllplot_n_unem", height = "500px")),
                   hidden(plotlyOutput(outputId = "TaiwanAllplot_oil", height = "500px")),
-                  dataTableOutput(outputId = "TaiwanAll_stat"),
+                  #dataTableOutput(outputId = "TaiwanAll_statMean"),
+                  #dataTableOutput(outputId = "TaiwanAll_stat"),
                   #verbatimTextOutput("summary"),
                   style = "
                         padding-right:50px;
@@ -435,20 +433,78 @@ server <- shinyServer(function(input, output, session){
   #-------敘述性統計--------
   #data_directory = "data/"
   #data =  read.csv( file.path(data_directory, "tw_output.csv"), stringsAsFactors = F)
-  
+  #summary statistics mean std
+  sub_stat_mean <- reactive({
+    data_directory = "data/"
+    taiwan_mean =  read.csv( file.path(data_directory, "tw_output.csv"), stringsAsFactors = F)
+    taiwan_mean <- setNames(taiwan_mean, c("time","失業率","油價","PM2.5","銷售額年增率","銷售額"))
+    taiwan_mean <- select(taiwan_mean,-PM2.5)
+    if( all(input$growth == TRUE & input$unem == TRUE & input$ios == TRUE)){
+      taiwan_mean <- select(taiwan_mean,"time","失業率","油價","銷售額年增率","銷售額")
+    } else if( all(input$growth == TRUE & input$unem == TRUE)){
+      taiwan_mean <- select(taiwan_mean,"time","失業率","銷售額年增率","銷售額")
+    } else if( all(input$growth == TRUE & input$ios == TRUE)){
+      taiwan_mean <- select(taiwan_mean,"time","油價","銷售額年增率","銷售額")
+    } else if( all(input$unem == TRUE & input$ios == TRUE)){
+      taiwan_mean <- select(taiwan_mean,"time","失業率","油價","銷售額")
+    } else if (all(input$growth == TRUE)){
+      taiwan_mean <- select(taiwan_mean,"time","銷售額年增率","銷售額")
+    } else if(all(input$unem == TRUE)){
+      taiwan_mean <- select(taiwan_mean,"time","失業率","銷售額")
+    } else if(all(input$ios == TRUE)){
+      taiwan_mean <- select(taiwan_mean,"time","油價","銷售額")
+    }
+    #-------時間轉換--------
+    taiwan_mean$time = as.Date( taiwan_mean$time ,format="%Y-%m-%d")
+    taiwan_mean <- subset(taiwan_mean, taiwan_mean$time>=as.Date(input$slider_taiwanall[1],format="%Y-%m-%d") &  taiwan_mean$time<=as.Date(input$slider_taiwanall[2],format="%Y-%m-%d"))
+    ind <- sapply(taiwan_mean, is.numeric)
+    sub_stat_mean <- sapply(taiwan_mean[, ind], my.summary)
+    sub_stat_mean <- round(sub_stat_mean, digits = 2)
+  })
+  output$TaiwanAll_statMean <- renderDataTable({
+    if( all(input$growth == FALSE & input$unem == FALSE & input$ios == FALSE)){
+      NULL
+    } else {
+      datatable(sub_stat_mean(),caption = htmltools::tags$caption( style = 'caption-side: top; text-align: center; color:black;font-weight:bold; font-size:125% ;','敘述性統計（平均數、標準差）'),
+                filter='none', options = list(ordering = FALSE, autoWidth = TRUE,paging = FALSE,searching = FALSE,info = FALSE))
+    }
+  })
   #summary statistics
   sub_stat <- reactive({
     data_directory = "data/"
     taiwan =  read.csv( file.path(data_directory, "tw_output.csv"), stringsAsFactors = F)
+    taiwan <- setNames(taiwan, c("time","失業率","油價","PM2.5","銷售額年增率","銷售額"))
+    taiwan <- select(taiwan,-PM2.5)
+    if( all(input$growth == TRUE & input$unem == TRUE & input$ios == TRUE)){
+      taiwan <- select(taiwan,"time","失業率","油價","銷售額年增率","銷售額")
+    } else if( all(input$growth == TRUE & input$unem == TRUE)){
+      taiwan <- select(taiwan,"time","失業率","銷售額年增率","銷售額")
+    } else if( all(input$growth == TRUE & input$ios == TRUE)){
+      taiwan <- select(taiwan,"time","油價","銷售額年增率","銷售額")
+    } else if( all(input$unem == TRUE & input$ios == TRUE)){
+      taiwan <- select(taiwan,"time","失業率","油價","銷售額")
+    } else if (all(input$growth == TRUE)){
+      taiwan <- select(taiwan,"time","銷售額年增率","銷售額")
+    } else if(all(input$unem == TRUE)){
+      taiwan <- select(taiwan,"time","失業率","銷售額")
+    } else if(all(input$ios == TRUE)){
+      taiwan <- select(taiwan,"time","油價","銷售額")
+    }
     #-------時間轉換--------
     taiwan$time = as.Date( taiwan$time ,format="%Y-%m-%d")
     taiwan <- subset(taiwan, taiwan$time>=as.Date(input$slider_taiwanall[1],format="%Y-%m-%d") &  taiwan$time<=as.Date(input$slider_taiwanall[2],format="%Y-%m-%d"))
     ind <- sapply(taiwan, is.numeric)
     sub_stat <- round(cor(taiwan[, ind]),digits = 2 )
+    #sub_stat <- recode(sub_stat,'total'="銷售額")
   })
   output$TaiwanAll_stat <- renderDataTable({
-    datatable(sub_stat(),filter='none', options = list(ordering = FALSE, autoWidth = TRUE,paging = FALSE,searching = FALSE
-    ))
+    if( all(input$growth == FALSE & input$unem == FALSE & input$ios == FALSE)){
+      NULL
+    } else {
+      datatable(sub_stat(),
+                caption = htmltools::tags$caption( style = 'caption-side: top; text-align: center; color:black;font-weight:bold; font-size:125% ;','敘述性統計（相關係數）'),
+                filter='none', options = list(ordering = FALSE, autoWidth = TRUE,paging = FALSE,searching = FALSE,info = FALSE))
+    }
   })
   
   #-------選取事件判斷--------
@@ -476,8 +532,10 @@ server <- shinyServer(function(input, output, session){
   observeEvent(input$stat, {
     if(input$stat == TRUE){
       showElement("TaiwanAll_stat")
+      showElement("TaiwanAll_statMean")
     }else{
       hideElement("TaiwanAll_stat")
+      hideElement("TaiwanAll_statMean")
     }
   })
   
