@@ -23,7 +23,7 @@
 
 #### 團隊成員
 
-<img width="100px" src="https://upload.cc/i1/2023/02/10/7ucoLS.png" alt="photo">
+<img width="80%" src="https://upload.cc/i1/2023/02/10/7ucoLS.png" alt="photo">
 
 <!-- <div style="display:inline-flex">
     <div style="">
