@@ -46,4 +46,4 @@
 
 #### 指導業師
 
-<img width="80%" src="https://upload.cc/i1/2023/02/10/KLECHv.png" alt="photo">
+<img width="40%" src="https://upload.cc/i1/2023/02/10/KLECHv.png" alt="photo">
