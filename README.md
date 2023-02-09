@@ -23,6 +23,6 @@
 
 #### 團隊成員
 
-<img width="30px" src="https://upload.cc/i1/2023/02/10/Byf9UV.png" alt="photo">
+<img width="150px" src="https://upload.cc/i1/2023/02/10/Byf9UV.png" alt="photo">
 
 ##### 指導業師
