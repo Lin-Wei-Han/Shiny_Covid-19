@@ -23,9 +23,23 @@
 
 #### 團隊成員
 
-<div>
-<h5 text-align="center" width="150px">黃鈺婷</h5>
-<img width="150px" src="https://upload.cc/i1/2023/02/10/Byf9UV.png" alt="photo">
+<div style="display:inline-flex">
+    <div style="">
+        <h5 align="center" style="width:100px">林威漢</h5>
+        <img width="100px" src="https://upload.cc/i1/2023/02/10/7XLqa8.png" alt="photo">
+    </div>
+    <div style="">
+        <h5 align="center" style="width:100px">黃郁文</h5>
+        <img width="100px" src="https://upload.cc/i1/2023/02/10/faIi3A.jpg" alt="photo">
+    </div>
+    <div style="">
+        <h5 align="center" style="width:100px">李琍絹</h5>
+        <img width="100px" src="https://upload.cc/i1/2023/02/10/8aBGpA.png" alt="photo">
+    </div>
+    <div style="">
+        <h5 align="center" style="width:100px">黃鈺婷</h5>
+        <img width="100px" src="https://upload.cc/i1/2023/02/10/Byf9UV.png" alt="photo">
+    </div>
 </div>
 
 ##### 指導業師
