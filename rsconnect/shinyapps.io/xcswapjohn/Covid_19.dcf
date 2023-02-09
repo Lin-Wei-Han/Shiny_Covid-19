@@ -1,0 +1,13 @@
+name: Covid_19
+title: Covid_19
+username:
+account: xcswapjohn
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 8264792
+bundleId: 6826898
+url: https://xcswapjohn.shinyapps.io/Covid_19/
+when: 1675927558.50836
+lastSyncTime: 1675927558.50843
+asMultiple: FALSE
+asStatic: FALSE
